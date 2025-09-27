@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tarea 3 – Autores y Editoriales</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📚</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #3b82f6;
+            --secondary-color: #1e40af;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --border-color: #e5e7eb;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+                'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+                sans-serif;
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-gradient);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 0.5s ease;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 2rem;
+        }
+
+        .loading-text {
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .loading-subtitle {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        #app {
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        #app.loaded {
+            opacity: 1;
+        }
+
+        /* Header Styles */
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 2rem 0;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .header .subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.1rem;
+            font-weight: 300;
+        }
+
+        .header .icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        /* Welcome Card */
+        .welcome-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 3rem 2rem;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            margin-bottom: 2rem;
+            animation: slideUp 0.6s ease;
+        }
+
+        .welcome-icon {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            display: block;
+        }
+
+        .welcome-title {
+            font-size: 2rem;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .welcome-description {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Features Grid */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .feature-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            animation: slideUp 0.6s ease;
+        }
+
+        .feature-card:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+
+        .feature-card:nth-child(3) {
+            animation-delay: 0.2s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .feature-title {
+            font-size: 1.3rem;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .feature-description {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        /* Action Button */
+        .action-section {
+            text-align: center;
+            margin: 3rem 0;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        /* Status Indicator */
+        .status-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(16, 185, 129, 0.9);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            backdrop-filter: blur(10px);
+            animation: slideIn 0.5s ease;
+        }
+
+        /* Footer */
+        .footer {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 2rem 0;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.8);
+            margin-top: 4rem;
+        }
+
+        /* Animations */
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .header .subtitle {
+                font-size: 1rem;
+            }
+            
+            .welcome-card {
+                padding: 2rem 1rem;
+            }
+            
+            .welcome-title {
+                font-size: 1.5rem;
+            }
+            
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .feature-card {
+                padding: 1.5rem;
+            }
+            
+            .container {
+                padding: 0 0.75rem;
+            }
+        }
+
+        /* Error States */
+        .error-card {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #dc2626;
+            padding: 1rem;
+            border-radius: 12px;
+            margin: 1rem 0;
+            text-align: center;
+            display: none;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Cargando aplicación...</div>
+        <div class="loading-subtitle">Preparando el sistema de gestión</div>
+    </div>
+
+    <!-- Status Indicator -->
+    <div class="status-indicator" id="statusIndicator">
+        ✅ Sistema listo
+    </div>
+
+    <!-- Main App -->
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="container">
+                <span class="icon">📚</span>
+                <h1>Autores y Editoriales</h1>
+                <p class="subtitle">Sistema de gestión con operaciones diferidas</p>
+            </div>
+        </header>
+
+        <div class="container">
+            <!-- Welcome Section -->
+            <div class="welcome-card">
+                <span class="welcome-icon">🚀</span>
+                <h2 class="welcome-title">Bienvenido al Sistema</h2>
+                <p class="welcome-description">
+                    Gestiona autores y editoriales de manera eficiente con nuestro sistema de colas diferidas. 
+                    Realiza operaciones que se procesan de forma optimizada para mejor rendimiento.
+                </p>
+            </div>
+            <!-- Action Section -->
+            <div class="action-section">
+                <button class="btn-primary" onclick="initializeApp()">
+                    <span>🎯</span>
+                    Inicializar Aplicación
+                </button>
+            </div>
+
+            <!-- Error Card (Hidden by default) -->
+            <div class="error-card" id="errorCard">
+                <strong>❌ Error:</strong> <span id="errorMessage">No se pudo cargar la aplicación</span>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="container">
+                <p>&copy; 2024 Sistema de Gestión de Autores y Editoriales - Tarea 3</p>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Simular carga de la aplicación
+        window.addEventListener('load', function() {
+            // Simular tiempo de carga
+            setTimeout(() => {
+                document.getElementById('loadingOverlay').style.opacity = '0';
+                document.getElementById('app').classList.add('loaded');
+                
+                setTimeout(() => {
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                }, 500);
+            }, 2000);
+
+            // Ocultar indicador de estado después de un tiempo
+            setTimeout(() => {
+                const indicator = document.getElementById('statusIndicator');
+                indicator.style.opacity = '0';
+                setTimeout(() => {
+                    indicator.style.display = 'none';
+                }, 300);
+            }, 4000);
+        });
+
+        // Función para inicializar la aplicación
+        function initializeApp() {
+            const button = event.target;
+            const originalText = button.innerHTML;
+            
+            // Cambiar estado del botón
+            button.innerHTML = '<span>⏳</span> Inicializando...';
+            button.disabled = true;
+            
+            // Simular inicialización
+            setTimeout(() => {
+                try {
+                    // Aquí iría la lógica real de inicialización
+                    // Por ejemplo: cargar el módulo principal de Vue
+                    
+                    // Para la demo, simplemente mostramos éxito
+                    button.innerHTML = '<span>✅</span> ¡Aplicación Lista!';
+                    button.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+                    
+                    // Mostrar mensaje de éxito
+                    showSuccessMessage('Aplicación inicializada correctamente');
+                    
+                    // En un caso real, aquí cargarías /src/main.js
+                    // loadMainModule();
+                    
+                } catch (error) {
+                    // Mostrar error si algo sale mal
+                    showError('Error al inicializar la aplicación: ' + error.message);
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }
+            }, 1000);
+        }
+
+        // Función para mostrar mensajes de éxito
+        function showSuccessMessage(message) {
+            const indicator = document.createElement('div');
+            indicator.className = 'status-indicator';
+            indicator.style.background = 'rgba(16, 185, 129, 0.9)';
+            indicator.innerHTML = '✅ ' + message;
+            indicator.style.top = '80px';
+            document.body.appendChild(indicator);
+            
+            setTimeout(() => {
+                indicator.style.opacity = '0';
+                setTimeout(() => {
+                    document.body.removeChild(indicator);
+                }, 300);
+            }, 3000);
+        }
+
+        // Función para mostrar errores
+        function showError(message) {
+            const errorCard = document.getElementById('errorCard');
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.textContent = message;
+            errorCard.style.display = 'block';
+            
+            setTimeout(() => {
+                errorCard.style.display = 'none';
+            }, 5000);
+        }
+
+        // Función para cargar el módulo principal (ejemplo)
+        function loadMainModule() {
+            const script = document.createElement('script');
+            script.type = 'module';
+            script.src = '/src/main.js';
+            script.onerror = () => {
+                showError('No se pudo cargar el archivo main.js');
+            };
+            document.head.appendChild(script);
+        }
+
+        // Manejo de errores globales
+        window.addEventListener('error', function(event) {
+            console.error('Error global capturado:', event.error);
+            showError('Se produjo un error inesperado');
+        });
+
+        // Efectos interactivos adicionales
+        document.addEventListener('DOMContentLoaded', function() {
+            // Agregar efectos de parallax suave
+            window.addEventListener('scroll', function() {
+                const scrolled = window.pageYOffset;
+                const header = document.querySelector('.header');
+                if (header) {
+                    header.style.transform = `translateY(${scrolled * 0.5}px)`;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
