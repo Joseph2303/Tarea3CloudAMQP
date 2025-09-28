@@ -193,7 +193,7 @@ const loadData = async () => {
     authors.value = await api.listAuthors()
     publishers.value = await api.listPublishers()
   } catch (error) {
-    msg.value = '❌ Error al cargar los datos'
+    msg.value = 'Error al cargar los datos'
     console.error('Error loading data:', error)
   }
 }
@@ -201,7 +201,7 @@ const loadData = async () => {
 onMounted(loadData)
 
 const queueOk = () => { 
-  msg.value = '✅ Operación agregada a la cola. Presiona "Actualizar datos" para aplicar cambios.'
+  msg.value = 'Operación agregada a la cola. Presiona "Actualizar datos" para aplicar cambios.'
   queuedOperations.value++
   setTimeout(() => {
     msg.value = ''
@@ -216,7 +216,7 @@ const addAuthor = async () => {
     authorName.value = ''
     queueOk()
   } catch (error) {
-    msg.value = '❌ Error al agregar el autor'
+    msg.value = 'Error al agregar el autor'
     console.error('Error adding author:', error)
   }
 }
@@ -228,7 +228,7 @@ const delAuthor = async (_id) => {
     await api.deleteAuthor(_id)
     queueOk()
   } catch (error) {
-    msg.value = '❌ Error al eliminar el autor'
+    msg.value = 'Error al eliminar el autor'
     console.error('Error deleting author:', error)
   }
 }
@@ -241,7 +241,7 @@ const addPublisher = async () => {
     publisherName.value = ''
     queueOk()
   } catch (error) {
-    msg.value = '❌ Error al agregar la editorial'
+    msg.value = 'Error al agregar la editorial'
     console.error('Error adding publisher:', error)
   }
 }
@@ -253,7 +253,7 @@ const delPublisher = async (_id) => {
     await api.deletePublisher(_id)
     queueOk()
   } catch (error) {
-    msg.value = '❌ Error al eliminar la editorial'
+    msg.value = 'Error al eliminar la editorial'
     console.error('Error deleting publisher:', error)
   }
 }
@@ -263,7 +263,7 @@ const onProcessQueue = async () => {
   
   try {
     const res = await api.processQueue()
-    msg.value = `🔄 Procesados: ${res.processed} elementos`
+    msg.value = `Procesados: ${res.processed} elementos`
     queuedOperations.value = 0
     await loadData()
     
@@ -271,7 +271,7 @@ const onProcessQueue = async () => {
       msg.value = ''
     }, 5000)
   } catch (error) {
-    msg.value = '❌ Error al procesar la cola'
+    msg.value = 'Error al procesar la cola'
     console.error('Error processing queue:', error)
   } finally {
     isProcessing.value = false
