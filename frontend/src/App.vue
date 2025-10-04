@@ -1,5 +1,7 @@
 <template>
   <div class="app">
+    <Login v-if="!authenticated" @authenticated="onAuthenticated" />
+    <div v-else>
     <!-- Header -->
     <header class="header">
       <div class="container">
@@ -19,7 +21,7 @@
       </div>
     </header>
 
-    <div class="container">
+  <div class="container">
       <!-- Status Message -->
       <div class="status-bar" v-if="msg">
         <div class="alert" :class="alertType">
@@ -29,7 +31,7 @@
       </div>
 
       <!-- Stats Cards -->
-      <div class="stats-grid">
+  <div class="stats-grid">
         <div class="stat-card">
           <div class="stat-number">{{ authors.length }}</div>
           <div class="stat-label">Autores</div>
@@ -45,7 +47,7 @@
       </div>
 
       <!-- Main Content -->
-      <div class="content-grid">
+  <div class="content-grid">
         <!-- Authors Section -->
         <section class="card">
           <div class="card-header">
@@ -159,12 +161,20 @@
         </section>
       </div>
     </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { api } from './api'
+import Login from './components/Login.vue'
+
+const authenticated = ref(!!localStorage.getItem('auth_token'))
+
+function onAuthenticated(token) {
+  authenticated.value = true
+}
 
 const authors = ref([])
 const publishers = ref([])
