@@ -19,6 +19,14 @@
           <span class="btn-icon">{{ isProcessing ? '⏳' : '🔄' }}</span>
           {{ isProcessing ? 'Procesando...' : 'Actualizar datos' }}
         </button>
+        <button
+          v-if="authenticated"
+          class="btn btn-danger"
+          @click="logout"
+          title="Cerrar sesión"
+        >
+          Cerrar sesión
+        </button>
       </div>
     </header>
 
@@ -178,6 +186,12 @@ const view = ref('login')
 
 function onAuthenticated(token) {
   authenticated.value = true
+}
+
+function logout() {
+  localStorage.removeItem('auth_token')
+  authenticated.value = false
+  view.value = 'login'
 }
 
 const authors = ref([])
