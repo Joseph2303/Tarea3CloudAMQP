@@ -1,6 +1,7 @@
 <template>
   <div class="app">
-    <Login v-if="!authenticated" @authenticated="onAuthenticated" />
+    <Login v-if="!authenticated && view === 'login'" @authenticated="onAuthenticated" @show-register="view = 'register'" />
+    <Register v-if="!authenticated && view === 'register'" @registered="view = 'login'" @back="view = 'login'" />
     <div v-else>
     <!-- Header -->
     <header class="header">
@@ -169,8 +170,11 @@
 import { ref, onMounted, computed } from 'vue'
 import { api } from './api'
 import Login from './components/Login.vue'
+import Register from './components/Register.vue'
 
 const authenticated = ref(!!localStorage.getItem('auth_token'))
+
+const view = ref('login')
 
 function onAuthenticated(token) {
   authenticated.value = true

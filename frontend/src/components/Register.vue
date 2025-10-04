@@ -1,13 +1,13 @@
 <template>
   <div class="login-screen">
     <div class="login-card">
-      <h2>Iniciar sesión</h2>
-      <form @submit.prevent="onLogin">
+      <h2>Registrar usuario</h2>
+      <form @submit.prevent="onRegister">
         <input v-model="email" type="email" placeholder="Email" required />
         <input v-model="password" type="password" placeholder="Contraseña" required />
         <div class="actions">
-          <button class="btn btn-primary" type="submit">Entrar</button>
-          <button class="btn" type="button" @click="$emit('show-register')">Registrar</button>
+          <button class="btn btn-success" type="submit">Registrar</button>
+          <button class="btn" type="button" @click="$emit('back')">Volver</button>
         </div>
       </form>
       <p class="msg" v-if="msg">{{ msg }}</p>
@@ -19,25 +19,22 @@
 import { ref } from 'vue'
 import { api } from '../api'
 
-const emit = defineEmits(['authenticated'])
+const emit = defineEmits(['registered','back'])
 
 const email = ref('')
 const password = ref('')
 const msg = ref('')
 
-const onLogin = async () => {
+const onRegister = async () => {
   try {
-    const res = await api.login({ email: email.value, password: password.value })
-    const token = res.token
-    localStorage.setItem('auth_token', token)
-    emit('authenticated', token)
+    await api.register({ email: email.value, password: password.value })
+    msg.value = 'Registrado OK. Ahora inicia sesión.'
+    emit('registered')
   } catch (e) {
-    console.error('login error', e)
-    msg.value = e?.response?.data?.error || 'Error en login'
+    console.error('register error', e)
+    msg.value = e?.response?.data?.error || 'Error en registro'
   }
 }
-
-// register moved to separate component; keep code in case needed
 </script>
 
 <style scoped>
@@ -46,5 +43,5 @@ const onLogin = async () => {
 .login-card h2 { margin:0 0 1rem 0 }
 .login-card input { width:100%; padding:0.75rem; margin-bottom:0.5rem; border-radius:8px; border:1px solid #ddd }
 .actions { display:flex; gap:0.5rem }
-.msg { margin-top:0.5rem; color:#d00 }
+.msg { margin-top:0.5rem; color:#0a0 }
 </style>
