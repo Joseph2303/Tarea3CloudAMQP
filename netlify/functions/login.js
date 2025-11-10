@@ -1,4 +1,4 @@
-const { getDb } = require('./_shared/mongo');
+const { findUserByEmail } = require('./_shared/redis');
 const crypto = require('crypto');
 
 const headers = {
@@ -47,15 +47,13 @@ exports.handler = async (event) => {
     const { email, password } = body;
     if (!email || !password) return { statusCode: 400, headers, body: JSON.stringify({ error: 'email y password requeridos' }) };
 
-    const db = await getDb();
-    const users = db.collection('users');
-    const user = await users.findOne({ email: email.toLowerCase() });
+  const user = await findUserByEmail(email);
     if (!user) return { statusCode: 401, headers, body: JSON.stringify({ error: 'Credenciales inválidas' }) };
 
     const candidate = hashPassword(password, user.salt);
     if (candidate !== user.passwordHash) return { statusCode: 401, headers, body: JSON.stringify({ error: 'Credenciales inválidas' }) };
 
-    const token = signToken({ sub: user._id.toString(), email: user.email, iat: Date.now() });
+  const token = signToken({ sub: user._id, email: user.email, iat: Date.now() });
     return { statusCode: 200, headers, body: JSON.stringify({ token }) };
   } catch (e) {
     console.error('[login] error:', e);

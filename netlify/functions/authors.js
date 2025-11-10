@@ -1,5 +1,5 @@
 // netlify/functions/authors.js
-const { getDb } = require('./_shared/mongo');
+const { listEntities } = require('./_shared/redis');
 const { publishMessage } = require('./_shared/rabbit');
 
 exports.handler = async (event) => {
@@ -23,13 +23,11 @@ exports.handler = async (event) => {
   };
 
   try {
-    // Conexión a Mongo (si falla, cae al catch y retorna 500 con el mensaje real)
-    const db = await getDb();
-    const col = db.collection('authors');
-
-    // GET: lista directa desde BD
+    // GET: lista directa desde Redis
     if (event.httpMethod === 'GET') {
-      const data = await col.find({}).sort({ _id: -1 }).toArray();
+      const data = await listEntities('authors');
+      // mantener orden inverso por fecha de creación
+      data.sort((a,b) => (b.createdAt || '') > (a.createdAt || '') ? 1 : -1);
       return { statusCode: 200, headers, body: JSON.stringify(data) };
     }
 

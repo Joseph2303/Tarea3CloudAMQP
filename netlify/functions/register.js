@@ -1,4 +1,4 @@
-const { getDb } = require('./_shared/mongo');
+const { findUserByEmail, createUser } = require('./_shared/redis');
 const crypto = require('crypto');
 
 const headers = {
@@ -22,19 +22,16 @@ exports.handler = async (event) => {
     const { email, password } = body;
     if (!email || !password) return { statusCode: 400, headers, body: JSON.stringify({ error: 'email y password requeridos' }) };
 
-    const db = await getDb();
-    const users = db.collection('users');
+  const existing = await findUserByEmail(email);
+  if (existing) return { statusCode: 409, headers, body: JSON.stringify({ error: 'Usuario ya existe' }) };
 
-    const existing = await users.findOne({ email: email.toLowerCase() });
-    if (existing) return { statusCode: 409, headers, body: JSON.stringify({ error: 'Usuario ya existe' }) };
+  const salt = crypto.randomBytes(16).toString('hex');
+  const passwordHash = hashPassword(password, salt);
 
-    const salt = crypto.randomBytes(16).toString('hex');
-    const passwordHash = hashPassword(password, salt);
+  const doc = { email: email.toLowerCase(), passwordHash, salt };
+  const id = await createUser(doc);
 
-    const doc = { email: email.toLowerCase(), passwordHash, salt, createdAt: new Date() };
-    const res = await users.insertOne(doc);
-
-    return { statusCode: 201, headers, body: JSON.stringify({ id: res.insertedId, email: doc.email }) };
+  return { statusCode: 201, headers, body: JSON.stringify({ id, email: doc.email }) };
   } catch (e) {
     console.error('[register] error:', e);
     return { statusCode: 500, headers, body: JSON.stringify({ error: e.message }) };

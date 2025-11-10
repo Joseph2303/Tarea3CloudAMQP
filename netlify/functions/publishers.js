@@ -1,5 +1,5 @@
 // netlify/functions/publishers.js
-const { getDb } = require('./_shared/mongo');
+const { listEntities } = require('./_shared/redis');
 const { publishMessage } = require('./_shared/rabbit');
 
 exports.handler = async (event) => {
@@ -23,12 +23,10 @@ exports.handler = async (event) => {
   };
 
   try {
-    const db = await getDb();
-    const col = db.collection('publishers');
-
-    // GET: lista directa desde BD
+    // GET: lista directa desde Redis
     if (event.httpMethod === 'GET') {
-      const data = await col.find({}).sort({ _id: -1 }).toArray();
+      const data = await listEntities('publishers');
+      data.sort((a,b) => (b.createdAt || '') > (a.createdAt || '') ? 1 : -1);
       return { statusCode: 200, headers, body: JSON.stringify(data) };
     }
 
