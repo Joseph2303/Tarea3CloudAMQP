@@ -2,34 +2,65 @@ const { createClient } = require('redis');
 
 let client = null;
 
+function buildUrlFromParts({ username, password, host, port, tls }) {
+  // Prefer rediss scheme when tls true
+  const scheme = tls ? 'rediss' : 'redis';
+  let auth = '';
+  if (username && password) auth = `${encodeURIComponent(username)}:${encodeURIComponent(password)}@`;
+  else if (password) auth = `:${encodeURIComponent(password)}@`;
+  return `${scheme}://${auth}${host}${port ? `:${port}` : ''}`;
+}
+
 async function getClient() {
   if (client) return client;
+
   const username = process.env.REDIS_USERNAME || process.env.REDIS_USER || undefined;
   const password = process.env.REDIS_PASSWORD || process.env.REDIS_PASS || undefined;
   const host = process.env.REDIS_HOST || process.env.REDIS_HOSTNAME || undefined;
   const port = process.env.REDIS_PORT ? Number(process.env.REDIS_PORT) : undefined;
+  const envUrl = process.env.REDIS_URL || process.env.REDIS_TLS_URL || undefined;
+  const useTls = (process.env.REDIS_TLS || process.env.REDIS_USE_TLS || '').toLowerCase() === 'true';
 
-  const opts = {};
-  if (username) opts.username = username;
-  if (password) opts.password = password;
-  opts.socket = {};
-  if (host) opts.socket.host = host;
-  if (port) opts.socket.port = port;
+  // connection timeout for faster failures (milliseconds)
+  const connectTimeout = process.env.REDIS_CONNECT_TIMEOUT ? Number(process.env.REDIS_CONNECT_TIMEOUT) : 5000;
 
-  // If CLOUD_REDIS_URL provided, use it
-  if (process.env.REDIS_URL) {
-    client = createClient({ url: process.env.REDIS_URL });
-  } else {
-    client = createClient(opts);
-  }
+  try {
+    if (envUrl) {
+      client = createClient({ url: envUrl, socket: { connectTimeout } });
+    } else if (host) {
+      // If TLS requested, build a rediss:// url
+      if (useTls) {
+        const url = buildUrlFromParts({ username, password, host, port, tls: true });
+        client = createClient({ url, socket: { connectTimeout } });
+      } else {
+        // plain host/port options
+        const opts = { socket: { connectTimeout } };
+        if (username) opts.username = username;
+        if (password) opts.password = password;
+        opts.socket.host = host;
+        if (port) opts.socket.port = port;
+        client = createClient(opts);
+      }
+    } else {
+      // fallback - try default client which will attempt localhost
+      client = createClient({ socket: { connectTimeout } });
+    }
 
-  client.on('error', (err) => {
-    console.error('Redis Client Error', err);
+    client.on('error', (err) => {
+      console.error('Redis Client Error', err);
+      // reset client so next call will try to reconnect
+      client = null;
+    });
+
+    // Await connect but surface a clearer error if it times out
+    await client.connect();
+    return client;
+  } catch (err) {
+    console.error('Failed to connect to Redis:', err && err.message ? err.message : err);
+    // ensure client is reset on failure
     client = null;
-  });
-
-  await client.connect();
-  return client;
+    throw new Error('Redis connection failed: ' + (err && err.message ? err.message : String(err)));
+  }
 }
 
 // Helpers for simple document storage using JSON strings and an id list
